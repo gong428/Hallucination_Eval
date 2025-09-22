@@ -65,7 +65,7 @@ def main(config_path: str, save_dir_base: str | None):
     # 객체의 속성에 직접 접근
     SCORE_COLUMNS = settings.model.inference_params.scorers
     
-    for dataset_name in settings.datasets_to_evaluate:
+    for dataset_name, dataset_config in settings.datasets.items():
         results_path = output_dir / f"{dataset_name}_output.json"
         
         if not results_path.exists():
@@ -74,7 +74,9 @@ def main(config_path: str, save_dir_base: str | None):
         
         results_df = pd.read_json(results_path)
         # 'prediction'과 'ground_truth'가 모두 문자열일 경우를 대비하여 타입 변환
-        results_df['response_correct'] = results_df['prediction'].astype(str) == results_df['ground_truth'].astype(str)
+        if 'response_correct' not in results_df.columns:
+            print(f"Error: 'response_correct' column not found in results for {dataset_name}. Skipping evaluation.")
+            continue
         
         print(f"\n--- Metrics for {dataset_name} ---")
         auroc_results = calculate_auroc_scores(results_df, SCORE_COLUMNS)
@@ -96,7 +98,7 @@ def main(config_path: str, save_dir_base: str | None):
         
     print(f"\nFinal metrics summary saved to: {metrics_path}")
     print("\n===== Pipeline Complete =====")
-
+    
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run the Hallucination Detection Pipeline.")

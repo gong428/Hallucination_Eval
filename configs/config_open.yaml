@@ -50,7 +50,7 @@ datasets:
 # --- 샘플링 설정 ---
 # 각 데이터셋에서 로드할 샘플의 수
 # null 로 설정하면 전체 데이터셋을 사용합니다.
-sample_num: 100
+sample_num: 10
 
 # --- 결과 저장 경로 ---
 results_dirs:
