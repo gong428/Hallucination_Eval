@@ -1,6 +1,6 @@
 import re
 from typing import Dict, Callable,Union, List
-
+import json
 # ===================================================================
 # 유형별 후처리기 및 평가 함수
 # ===================================================================
@@ -21,17 +21,31 @@ def _evaluate_math(prediction: str, answer: str) -> bool:
 def _evaluate_open_domain(prediction: str, answer: Union[str, List[str]]) -> bool:
     """
     자유 형식 답변을 평가합니다.
-    - answer가 리스트인 경우: prediction에 리스트 항목 중 하나라도 포함되면 True.
-    - answer가 문자열인 경우: prediction에 해당 문자열이 포함되면 True.
+    - answer가 리스트 또는 리스트 형태의 문자열인 경우: 
+      prediction에 리스트 항목 중 하나라도 포함되면 True.
+    - answer가 일반 문자열인 경우: 
+      prediction에 해당 문자열이 포함되면 True.
     """
     prediction_lower = str(prediction).lower()
     
+    # 1. answer가 이미 파이썬 리스트인 경우
     if isinstance(answer, list):
-        # 정답이 리스트인 경우, 하나라도 포함되면 정답으로 처리
         return any(str(ans).lower() in prediction_lower for ans in answer)
-    else:
-        # 정답이 단일 문자열인 경우, 해당 문자열 포함 여부 확인
-        return str(answer).lower() in prediction_lower
+    
+    # 2. answer가 리스트 형태의 "문자열"인 경우 (예: "['a', 'b']")
+    answer_str = str(answer).strip()
+    if answer_str.startswith('[') and answer_str.endswith(']'):
+        try:
+            # 문자열을 실제 리스트로 파싱
+            answer_list = json.loads(answer_str.replace("'", "\"")) # 작은따옴표도 처리
+            if isinstance(answer_list, list):
+                return any(str(ans).lower() in prediction_lower for ans in answer_list)
+        except json.JSONDecodeError:
+            # 파싱에 실패하면 일반 문자열로 취급하여 아래에서 처리
+            pass
+
+    # 3. answer가 일반 문자열인 경우 (기본 처리)
+    return str(answer).lower() in prediction_lower
 
 def _evaluate_exact_match(prediction: str, answer: str) -> bool:
     """
