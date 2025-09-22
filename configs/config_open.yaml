@@ -21,10 +21,10 @@ model:
       - "min_probability"
       - "normalized_probability"
     # 🆕 시스템 프롬프트: 모델의 전반적인 역할과 답변 스타일을 지정합니다.
-    system_prompt: " "
+    system_prompt: "You are a helpful assistant. Please answer the user's question in a complete and natural sentence."
     # "You are an expert at solving math word problems. Provide only the final numerical answer without any extra text or explanation."
     # 템플릿을 영어로 번역하고 YAML 오류를 방지하기 위해 한 줄로 수정했습니다.
-    user_prompt_template: "When you solve this math problem only return the answer with no additional text.\n{question}"
+    user_prompt_template: "{question}"
     
     # 만약 'ours' 방식에만 필요한 파라미터가 있다면 여기에 추가합니다.
     # custom_threshold: 0.75
@@ -42,15 +42,15 @@ datasets:
   #  type: "exact_match"
   halu_eval_qa:
     type : "open_domain"
-  nq_open:
-    type : "open_domain"
-  popqa:
-    type : "open_domain"
+  #nq_open:
+  #  type : "open_domain"
+  #popqa:
+  #  type : "open_domain"
 
 # --- 샘플링 설정 ---
 # 각 데이터셋에서 로드할 샘플의 수
 # null 로 설정하면 전체 데이터셋을 사용합니다.
-sample_num: 1000
+sample_num: 100
 
 # --- 결과 저장 경로 ---
 results_dirs:

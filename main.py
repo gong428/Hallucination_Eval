@@ -35,9 +35,9 @@ def main(config_path: str, save_dir_base: str | None):
     pipe, tokenizer = load_model(settings.model.name, settings.model.path)
 
     # 3. 데이터셋별 추론 및 결과 저장
-    for dataset_name in settings.datasets_to_evaluate:
+    for dataset_name, dataset_config in settings.datasets.items():
         try:
-            print(f"\n--- Processing Dataset: {dataset_name} ---")
+            print(f"\n--- Processing Dataset: {dataset_name} (type: {dataset_config.type}) ---")
             raw_data = load_raw_dataset(dataset_name, settings.sample_num)
             
             # 추론 실행
@@ -46,10 +46,10 @@ def main(config_path: str, save_dir_base: str | None):
                 params=settings.model.inference_params,
                 pipe=pipe,
                 tokenizer=tokenizer,
-                data=raw_data
+                data=raw_data,
+                dataset_type=dataset_config.type
             )
-
-            # 결과 저장
+            #결과 저장
             output_path = output_dir / f"{dataset_name}_output.json"
             with open(output_path, 'w', encoding='utf-8') as f:
                 json.dump(results, f, indent=4, ensure_ascii=False)
@@ -105,3 +105,4 @@ if __name__ == "__main__":
     args = parser.parse_args()
     main(config_path=args.config, save_dir_base=args.save_dir)
 
+#python main.py -c configs/config.yaml --save_dir ./results

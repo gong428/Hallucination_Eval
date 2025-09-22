@@ -5,7 +5,9 @@ from tqdm.auto import tqdm
 from uqlm.scorers import WhiteBoxUQ
 from typing import List, Dict
 
-# 프롬프트 템플릿은 추론 방식과 무관하게 공통으로 사용될 수 있습니다.
+from utils.answer_eval import is_correct
+
+# user_inference 용으로 남겨두기만 한 템플릿 사용 안함.
 FEW_SHOT_PROMPT_TEMPLATE = """When you solve this math problem only return the answer with no additional text.
 
 Q: Natalia sold clips to 48 of her friends in April, and then she sold half as many clips in May. How many clips did Natalia sell altogether in April and May?
@@ -70,7 +72,7 @@ def _extract_logprobs(outputs, input_length: int, tokenizer) -> List[Dict[str, f
 # ===================================================================
 # 내부 함수 1: UQLM 추론 로직
 # ===================================================================
-def _run_uqlm_inference(pipe, tokenizer, data, params: dict):
+def _run_uqlm_inference(pipe, tokenizer, data, params: dict, dataset_type: str):
     """uqlm.WhiteBoxUQ를 사용하여 신뢰도 점수를 계산합니다."""
     print("Executing inference using 'uqlm' method...")
     
@@ -137,8 +139,8 @@ def _run_uqlm_inference(pipe, tokenizer, data, params: dict):
     results_df['ground_truth'] = ground_truths_list
 
     # --- 5. 후처리기를 적용하여 정답 여부 계산 ---
-    is_correct = [math_postprocessor(p) == math_postprocessor(a) for p, a in zip(results_df["prediction"], results_df["ground_truth"])]
-    results_df['response_correct'] = is_correct
+    correctness = [is_correct(p, a, dataset_type) for p, a in zip(results_df["prediction"], results_df["ground_truth"])]
+    results_df['response_correct'] = correctness
     
     return results_df.to_dict(orient='records')
 # ===================================================================
@@ -168,15 +170,15 @@ def _run_ours_inference(pipe, tokenizer, data, params: dict):
 # ===================================================================
 # 메인 컨트롤러 함수
 # ===================================================================
-def model_inference(method: str, params: dict, pipe, tokenizer, data):
+def model_inference(method: str, params: dict, pipe, tokenizer, data, dataset_type: str):
     """
     설정된 method에 따라 적절한 추론 함수를 호출하는 컨트롤 타워입니다.
     """
     if method == 'uqlm':
-        return _run_uqlm_inference(pipe, tokenizer, data, params)
+        return _run_uqlm_inference(pipe, tokenizer, data, params, dataset_type)
     
     elif method == 'ours':
-        return _run_ours_inference(pipe, tokenizer, data, params)
+        return _run_ours_inference(pipe, tokenizer, data, params, dataset_type)
         
     else:
         raise ValueError(f"Unsupported inference method: '{method}'. Choose from 'uqlm' or 'ours'.")
