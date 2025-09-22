@@ -1,0 +1,50 @@
+# config.yaml
+
+model:
+  name: "llama3"
+  path: "meta-llama/Meta-Llama-3-8B-Instruct" 
+  inference_method: "uqlm" 
+
+  model_kwargs:
+    torch_dtype: "bfloat16"   # "float16", "bfloat16", "float32" 등
+    load_in_4bit: true      # 4비트 양자화 활성화
+    # load_in_8bit: false     # 8비트 양자화 옵션
+    # bnb_4bit_quant_type: "nf4"
+    # bnb_4bit_compute_dtype: "bfloat16"
+
+  # 🆕 추론 방식에 관계없이 공통으로 사용될 파라미터 블록
+  inference_params:
+    max_new_tokens: 64
+    temperature: 1
+    top_p: 0.9
+    scorers:
+      - "min_probability"
+      - "normalized_probability"
+    # 🆕 시스템 프롬프트: 모델의 전반적인 역할과 답변 스타일을 지정합니다.
+    system_prompt: " "
+    # "You are an expert at solving math word problems. Provide only the final numerical answer without any extra text or explanation."
+    # 템플릿을 영어로 번역하고 YAML 오류를 방지하기 위해 한 줄로 수정했습니다.
+    user_prompt_template: "When you solve this math problem only return the answer with no additional text.\n{question}"
+    
+    # 만약 'ours' 방식에만 필요한 파라미터가 있다면 여기에 추가합니다.
+    # custom_threshold: 0.75
+    # beam_size: 5
+# --- 평가할 데이터셋 목록 ---
+# 여기에 데이터셋 이름을 추가하거나 제거하여 평가 대상을 제어합니다.
+datasets_to_evaluate:
+  - "gsm8k"
+  - "svamp"
+  - "csqa"
+  - "ai2_arc"
+  - "nq_open"
+  - "popqa"
+
+# --- 샘플링 설정 ---
+# 각 데이터셋에서 로드할 샘플의 수
+# null 로 설정하면 전체 데이터셋을 사용합니다.
+sample_num: 1000
+
+# --- 결과 저장 경로 ---
+results_dirs:
+  model_outputs: "results/model_outputs"
+  metrics: "results/metrics"
