@@ -54,7 +54,23 @@ def _extract_logprobs_detailed(outputs, input_length: int, tokenizer) -> tuple[L
         prob = float(np.exp(lp))
         text = tokenizer.decode([token_id], skip_special_tokens=True)
 
-        entry = {'idx': i, 'id': int(token_id), 'text': text, 'logprob': lp, 'prob': prob}
+        # --- ⬇️ Top-10 추출 로직 추가 ---
+        token_probs = torch.nn.functional.softmax(outputs.scores[i], dim=-1)[0]
+        top10_probs, top10_indices = torch.topk(token_probs, 10)
+        top10_tokens_text = tokenizer.convert_ids_to_tokens(top10_indices)
+        top_10_info = [{'token': t, 'prob': p.item()} for t, p in zip(top10_tokens_text, top10_probs)]
+        # --- ⬆️ Top-10 추출 로직 끝 ---
+
+
+
+        entry = {
+            'idx': i, 
+            'id': int(token_id), 
+            'text': text, 
+            'logprob': lp, 
+            'prob': prob,
+            'top_10_tokens': top_10_info  # 🆕 Top-10 정보 추가
+        }
         tokens_detail.append(entry)
         wbuq_logprobs.append({'logprob': lp})
 
@@ -90,6 +106,26 @@ def _extract_logprobs(outputs, input_length: int, tokenizer) -> List[Dict[str, f
     # 2. 모델의 출력 점수(logits)를 로그 확률로 변환합니다.
     logprobs_list = [torch.nn.functional.log_softmax(score, dim=-1) for score in outputs.scores]
     
+    # --- Top-10 추출 로직 시작 ---
+    prompt_top10_data = []
+    all_top10_probs = []
+
+    for i, token_logits in enumerate(outputs.scores):
+        # 로짓을 전체 확률 분포로 변환 (소프트맥스)
+        token_probs = torch.nn.functional.softmax(token_logits, dim=-1)[0]
+        
+        # 확률이 가장 높은 10개와 그 인덱스를 찾음
+        top10_probs, top10_indices = torch.topk(token_probs, 10)
+        
+        # 인덱스(토큰 ID)를 실제 토큰(문자)으로 변환
+        top10_tokens = tokenizer.convert_ids_to_tokens(top10_indices)
+        
+        # 해당 단계의 top-10 정보를 저장
+        step_top10 = [{'token': token, 'prob': prob.item()} for token, prob in zip(top10_tokens, top10_probs)]
+        prompt_top10_data.append(step_top10)
+    all_top10_probs.append(prompt_top10_data)
+    # --- Top-10 추출 로직 끝 ---
+    
     # --- ⬇️ EOS 토큰 제외 로직 추가 ---
     sequence_to_process = generated_sequence
     # 마지막 토큰이 EOS 토큰이면, 처리할 시퀀스에서 제외합니다.
@@ -104,4 +140,4 @@ def _extract_logprobs(outputs, input_length: int, tokenizer) -> List[Dict[str, f
         token_logprob = logprobs_list[i][0, token_id].item()
         sequence_logprobs.append({'logprob': token_logprob})
         
-    return sequence_logprobs
+    return sequence_logprobs, all_top10_probs

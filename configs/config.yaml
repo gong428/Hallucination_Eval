@@ -42,15 +42,15 @@ datasets:
   #  type: "exact_match"
   halu_eval_qa:
     type : "open_domain"
-  nq_open:
-    type : "open_domain"
-  popqa:
-    type : "open_domain"
+  #nq_open:
+  #  type : "open_domain"
+  #popqa:
+  #  type : "open_domain"
 
 # --- 샘플링 설정 ---
 # 각 데이터셋에서 로드할 샘플의 수
 # null 로 설정하면 전체 데이터셋을 사용합니다.
-sample_num: 1000
+sample_num: 10
 
 # --- 결과 저장 경로 ---
 results_dirs:
